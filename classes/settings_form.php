@@ -43,6 +43,9 @@ class settings_form extends \workshop_evaluation_settings_form {
 
         // Call the method to get feedback data
         $feedback_data = $evaluation->get_feedback_data();
+        $rubriclvls_data = $evaluation->get_rubriclvl_data();
+        $grades_data = $evaluation->get_grades_data();
+        $instructions_data = $evaluation->get_instruction_data();
         $workshopid = $this->_customdata['workshop']->id; // Obtener el workshopid
 
         // Create an HTML table to display the results
@@ -52,6 +55,7 @@ class settings_form extends \workshop_evaluation_settings_form {
                                 <th>Workshop ID</th>
                                 <th>Estudiante</th>
                                 <th>Estudiante Asignado a Calificar</th>
+                                <th>Contenido Estudiante</th>
                                 <th>Retroalimentación</th>
                                 <th>Calificación</th>
                              </tr>
@@ -65,6 +69,7 @@ class settings_form extends \workshop_evaluation_settings_form {
                                     <td>' . htmlspecialchars($data->workshopid) . '</td>
                                     <td>' . htmlspecialchars($data->author) . '</td>
                                     <td>' . htmlspecialchars($data->reviewer) . '</td>
+                                    <td>' . $data->content . '</td>
                                     <td>' . $data->feedbackauthor . '</td>
                                     <td>' . htmlspecialchars($data->grade) . '</td>
                                 </tr>';

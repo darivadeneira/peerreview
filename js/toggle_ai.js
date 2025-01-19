@@ -3,10 +3,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var otherButton = document.getElementById("id_submit");
     var title = document.getElementById("id_general");
     var table = document.getElementById("feedback-table");
-    if (table) {
-        var workshopId = table.dataset.workshopid; // Obtener el workshopid desde el atributo de datos
-        console.log("Workshop ID:", workshopId);
-    }
 
     if (toggleAiButton && otherButton) {
         otherButton.style.display = "none";
@@ -59,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
             removeAiColumnFromTable();
         }
 
-        // Restaurar los valores de la API Key si existen
+        // Restaurar los valores de la API Key y URL si existen
         apiKeyInput.value = localStorage.getItem("apiKey") || '';
 
         // Manejar clic en el botón para mostrar/ocultar elementos
@@ -103,58 +99,84 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Manejar clic en el botón "Revisar ahora"
         reviewButton.addEventListener("click", function (event) {
+            event.preventDefault(); // Prevenir redirección
             var apiKey = apiKeyInput.value;
-
+        
             if (!apiKey) {
                 alert("Por favor, ingrese la API Key antes de enviar.");
                 event.preventDefault(); // Prevenir redirección
                 return;
             }
-
+        
             // Guardar los valores de la API Key
             localStorage.setItem("apiKey", apiKey);
-
-            // Enviar datos al archivo PHP
-            fetch("eval/peerreview/evaluate_feedback_ai.php", {
+        
+            var rows = table.tBodies[0].rows;
+            var feedbackData = [];
+        
+            // Recopilar las respuestas de la tabla
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].cells;
+        
+                // Recopilar los datos de cada fila
+                var data = {
+                    author: cells[1].textContent,
+                    reviewer: cells[2].textContent,
+                    feedbackauthor: cells[3].textContent,
+                };
+        
+                feedbackData.push(data);  // Agregar la fila al array
+            }
+        
+            // Realizar la petición a GPT-3 para evaluar los comentarios
+            fetch("https://api.openai.com/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`,
                 },
                 body: JSON.stringify({
-                    apiKey: apiKey,
-                    workshopId: workshopId // Incluir el workshopId en la solicitud
+                    model: "gpt-4o-mini", 
+                    messages: [
+                        {
+                            role: "system",
+                            content: "Evalúa si esta retroalimentación corrige adecuadamente la respuesta del estudiante sobre el tema dado. Responde únicamente con 'Alineada' o 'Revisión'."
+                        },
+                        ...feedbackData.map(data => ({
+                            role: "user",
+                            content: `Comentario: ${data.feedbackauthor}`
+                        }))
+                    ],
+                    temperature: 0.5,
+                    max_tokens: 1000,
                 }),
             })
-                .then(response => {
-                    console.log("HTTP Status:", response.status);
-                    return response.text(); // Cambiamos a .text() para ver el contenido bruto
-                })
-                .then(text => {
-                    console.log("Raw Response Text:", text); // Inspeccionar el texto crudo
-                    let data;
-                    try {
-                        data = JSON.parse(text); // Intentar parsear manualmente
-                    } catch (error) {
-                        console.error("JSON Parse Error:", error);
-                        throw new Error("La respuesta no es un JSON válido.");
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error en la solicitud: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.choices && data.choices[0].message) {
+                    console.log("Evaluación exitosa:", data);
+                    // Actualizar la columna "Revisión IA" con los resultados
+                    for (var i = 0; i < data.choices.length; i++) {
+                        rows[i].cells[rows[i].cells.length - 1].textContent =
+                            data.choices[i].message.content.trim();
                     }
-                    console.log("Parsed JSON Data:", data);
-                    if (data.success) {
-                        for (var i = 0; i < data.evaluation.length; i++) {
-                            rows[i].cells[rows[i].cells.length - 1].textContent =
-                                data.evaluation[i].review;
-                        }
-                        alert("Evaluación completada con éxito.");
-                    } else {
-                        alert("Error al procesar la evaluación de la IA: " + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error al enviar datos al archivo PHP:", error);
-                    alert("Ocurrió un error al intentar procesar la solicitud.");
-                });
+                    alert("Evaluación completada con éxito.");
+                } else {
+                    console.error("Error en la evaluación:", data.error);
+                    alert("Error al procesar la evaluación de la IA.");
+                }
+            })
+            .catch(error => {
+                console.error("Error en el procesamiento de la solicitud:", error);
+                alert("Ocurrió un error al intentar procesar la solicitud: " + error.message);
+            });
         });
-
+        
     }
 
     function addAiColumnToTable() {

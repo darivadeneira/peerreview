@@ -76,12 +76,13 @@ class workshop_peerreview_evaluation extends workshop_best_evaluation {
 
         // Consulta SQL para obtener los nombres de los revisores y de los revisados
         $query = "
-            SELECT
+            SELECT 
                 CONCAT(u.firstname, ' ', u.lastname) AS author,
                 CONCAT(u2.firstname, ' ', u2.lastname) AS reviewer,
                 wa.feedbackauthor,
                 wa.grade,
-                mws.workshopid
+                mws.workshopid,
+                mws.content
             FROM
                 {workshop_submissions} mws
             JOIN
@@ -97,5 +98,74 @@ class workshop_peerreview_evaluation extends workshop_best_evaluation {
         // Ejecutar la consulta SQL
         return $DB->get_records_sql($query, ['workshopid' => $this->workshop->id]);
     }    
+
+    function get_rubriclvl_data(){
+        global $DB;
+         $query2 = "
+                SELECT 
+                    mwrl.dimensionid AS rubric_dimension_id,
+                    GROUP_CONCAT(DISTINCT mwrl.definition ORDER BY mwrl.dimensionid) AS rubric_definition,
+                    GROUP_CONCAT(DISTINCT mwrl.grade ORDER BY mwrl.dimensionid) AS rubric_grade
+                FROM 
+                    {workshop} mw
+                JOIN 
+                    {workshop_submissions} mws ON mw.id = mws.workshopid
+                JOIN 
+                    {workshop_assessments} wa ON mws.id = wa.submissionid
+                JOIN 
+                    {workshop_grades} mwg ON wa.id = mwg.assessmentid
+                JOIN 
+                    {workshopform_rubric_levels} mwrl ON mwg.dimensionid = mwrl.dimensionid
+                WHERE 
+                    mw.id = :workshopid
+                GROUP BY  
+                    mwrl.dimensionid
+                ORDER BY 
+                    mwrl.dimensionid";
+        return $DB->get_records_sql($query2, ['workshopid' => $this->workshop->id]);
+    }
+
+    function get_grades_data(){
+        global $DB;
+        
+        $query3 = "
+            SELECT 
+            GROUP_CONCAT(DISTINCT mwrl.definition ORDER BY mwrl.dimensionid) AS rubric_definition,
+            GROUP_CONCAT(mwg.grade ORDER BY mwrl.dimensionid) AS rubric_grade,
+            GROUP_CONCAT(DISTINCT wa.feedbackauthor ORDER BY mwrl.dimensionid) AS feedback_author,
+            GROUP_CONCAT(DISTINCT mws.content ORDER BY mwrl.dimensionid) AS student_content,
+            mws.authorid AS student_id
+            FROM 
+                {workshop_grades} mwg
+            JOIN 
+                {workshopform_rubric_levels} mwrl 
+                ON mwg.dimensionid = mwrl.dimensionid 
+                AND mwg.grade = mwrl.grade
+            JOIN 
+                {workshop_assessments} wa 
+                ON mwg.assessmentid = wa.id
+            JOIN 
+                {workshop_submissions} mws 
+                ON wa.submissionid = mws.id
+            WHERE 
+                mws.workshopid = 2 -- Cambia según el ID del taller
+            GROUP BY
+                mws.authorid -- Agrupamos por el ID del estudiante
+            ORDER BY 
+                mws.authorid";
+        return $DB->get_records_sql($query3, ['workshopid' => $this->workshop->id]);
+    }
+
+    function get_instruction_data(){
+        global $DB;
+        $query4 = "
+            SELECT 
+                mw.instructauthors
+            FROM 
+                {workshop} mw
+            WHERE 
+                mw.id = :workshopid";
+        return $DB->get_records_sql($query4, ['workshopid' => $this->workshop->id]);
+    }
 }
 ?>

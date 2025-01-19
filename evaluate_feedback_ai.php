@@ -1,24 +1,23 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// Este archivo es parte de Moodle - http://moodle.org/
+// Moodle es software libre: puedes redistribuirlo y/o modificarlo
+// bajo los términos de la Licencia Pública General GNU publicada por
+// la Free Software Foundation, ya sea en la versión 3 de la Licencia, o
+// (a tu elección) cualquier versión posterior.
 //
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Moodle se distribuye con la esperanza de que sea útil,
+// pero SIN NINGUNA GARANTÍA; sin siquiera la garantía implícita de
+// COMERCIABILIDAD o APTITUD PARA UN PROPÓSITO PARTICULAR. Consulta la
+// Licencia Pública General GNU para más detalles.
 //
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// Deberías haber recibido una copia de la Licencia Pública General GNU
+// junto con Moodle. Si no, consulta <http://www.gnu.org/licenses/>.
 
 /**
- * Workshop evaluation class.
+ * Clase de evaluación del taller.
  *
  * @copyright 2025 Erick Lasluisa, Ariel Rivadeneira, Augusto Salazar
- * @license   https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license   https://www.gnu.org/copyleft/gpl.html Licencia GPL v3 o posterior
  * @package   workshopeval_peerreview
  */
 
@@ -33,47 +32,30 @@ if (!is_siteadmin()) {
 // Validar y recibir datos de la solicitud POST.
 $data = json_decode(file_get_contents('php://input'), true);
 
-// Obtener la API key y workshopId proporcionados por el profesor.
-$api_key = $data['apiKey'];
-$workshopId = $data['workshopId'];
-
-// Asegúrate de que la clave API y el workshopId estén presentes.
-if (empty($api_key) || empty($workshopId)) {
+// Validar la clave API
+if (empty($data['apiKey'])) {
+    echo json_encode(['error' => 'API Key es requerida.']);
     http_response_code(400);
-    echo json_encode(['error' => 'Se requiere una API Key y un workshopId.']);
     exit;
 }
 
-// Función para obtener los datos de retroalimentación.
-function get_feedback_data($workshopId) {
-    global $DB;
-    
-    $query = "
-        SELECT
-            wa.id AS assessmentid,
-            wa.feedbackauthor,
-            mws.content
-        FROM
-            {workshop_submissions} mws
-        JOIN
-            {workshop_assessments} wa ON mws.id = wa.submissionid
-        WHERE
-            mws.workshopid = :workshopid
-    ";
-
-    return $DB->get_records_sql($query, ['workshopid' => $workshopId]);
+if (empty($data['feedbackData']) || !is_array($data['feedbackData'])) {
+    echo json_encode(['error' => 'La retroalimentación es necesaria y debe ser un arreglo.']);
+    http_response_code(400);
+    exit;
 }
 
-// Obtener los datos de la retroalimentación.
-$feedback_data = get_feedback_data($workshopId);
+// Obtener la API key proporcionada por el profesor.
+$api_key = $data['apiKey'];
+$feedback_data = $data['feedbackData'];
 
 // Construir el 'prompt' dinámicamente para enviar a la API de OpenAI.
 foreach ($feedback_data as $feedback) {
     $prompt = "Evalúa si esta retroalimentación corrige adecuadamente la respuesta del estudiante sobre el tema dado. 
     Responde únicamente con 'Alineada' o 'Revisión'. 
-    Respuesta del estudiante: {$feedback->content} 
-    Retroalimentación del revisor: {$feedback->feedbackauthor} 
-    Tema: Pruebas de testeo";
+    Respuesta del estudiante: {$feedback['author']} 
+    Retroalimentación del revisor: {$feedback['feedbackauthor']} 
+    Tema: Test de prueba";
 
     // Datos para la solicitud a la API de OpenAI
     $request_data = [
@@ -101,11 +83,12 @@ foreach ($feedback_data as $feedback) {
         $evaluacion = trim($respuesta_ia['choices'][0]['text']); // Limpia espacios o saltos de línea.
 
         if ($evaluacion === 'Alineada' || $evaluacion === 'Revisión') {
-            // Actualiza la base de datos con la evaluación de la IA.
-            $DB->update_record('workshop_assessments', [
-                'id' => $feedback->assessmentid,  // Asegúrate de que el ID de la evaluación esté en los datos
-                'feedbackreviewer' => $evaluacion,
-            ]);
+            // Aquí puedes hacer lo que necesites con la evaluación, como guardarla en la base de datos.
+            // Por ejemplo:
+            // $DB->update_record('workshop_assessments', [
+            //     'id' => $feedback['assessment_id'],  // Asegúrate de que el ID de la evaluación esté en los datos
+            //     'feedbackreviewer' => $evaluacion,
+            // ]);
             echo json_encode(['success' => true, 'evaluation' => $evaluacion]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Respuesta inesperada de la IA.']);
@@ -114,4 +97,3 @@ foreach ($feedback_data as $feedback) {
         echo json_encode(['success' => false, 'error' => 'Error al procesar la solicitud a la IA.']);
     }
 }
-?>
