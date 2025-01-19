@@ -1,1 +1,2 @@
 "# peerreview" 
+Para poder hacer cambios en este archivo y verlos en su proyecto de manera local, debe hacer git clone de este repositorio en la ruta moodle/mod/workshop/eval y aceptar la instalación de en su moodle local.
