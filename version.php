@@ -24,7 +24,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'workshopeval_peerreview';
-$plugin->version = 2025140100;
+$plugin->version = 2025190100;
 $plugin->requires = 2022112800;
 $plugin->release = '1.0';
 $plugin->maturity = MATURITY_STABLE;
