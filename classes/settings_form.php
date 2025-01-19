@@ -43,27 +43,34 @@ class settings_form extends \workshop_evaluation_settings_form {
 
         // Call the method to get feedback data
         $feedback_data = $evaluation->get_feedback_data();
+        $workshopid = $this->_customdata['workshop']->id; // Obtener el workshopid
 
         // Create an HTML table to display the results
-        $table_html = '<table id="feedback-table" class="table table-striped">
+        $table_html = '<table id="feedback-table" class="table table-striped" data-workshopid="' . $workshopid . '">
                          <thead>
                              <tr>
-                                 <th>Estudiante</th>
-                                 <th>Estudiante Asignado a Calificar</th>
-                                 <th>Retroalimentación</th>
-                                 <th>Calificación</th>
+                                <th>Workshop ID</th>
+                                <th>Estudiante</th>
+                                <th>Estudiante Asignado a Calificar</th>
+                                <th>Retroalimentación</th>
+                                <th>Calificación</th>
                              </tr>
                          </thead>
                          <tbody>';
 
-        // Add data to the table
-        foreach ($feedback_data as $data) {
-            $table_html .= '<tr>
-                                <td>' . $data->author .'</td>
-                                <td>' . $data->reviewer .'</td>
-                                <td>' . $data->feedbackauthor . '</td>
-                                <td>' . $data->grade . '</td>
-                            </tr>';
+        // Verificar si hay datos y agregar filas a la tabla
+        if ($feedback_data) {
+            foreach ($feedback_data as $data) {
+                $table_html .= '<tr>
+                                    <td>' . htmlspecialchars($data->workshopid) . '</td>
+                                    <td>' . htmlspecialchars($data->author) . '</td>
+                                    <td>' . htmlspecialchars($data->reviewer) . '</td>
+                                    <td>' . $data->feedbackauthor . '</td>
+                                    <td>' . htmlspecialchars($data->grade) . '</td>
+                                </tr>';
+            }
+        } else {
+            $table_html .= '<tr><td colspan="5">No se encontraron datos.</td></tr>';
         }
 
         $table_html .= '</tbody></table>';

@@ -80,7 +80,8 @@ class workshop_peerreview_evaluation extends workshop_best_evaluation {
                 CONCAT(u.firstname, ' ', u.lastname) AS author,
                 CONCAT(u2.firstname, ' ', u2.lastname) AS reviewer,
                 wa.feedbackauthor,
-                wa.grade
+                wa.grade,
+                mws.workshopid
             FROM
                 {workshop_submissions} mws
             JOIN
@@ -97,3 +98,4 @@ class workshop_peerreview_evaluation extends workshop_best_evaluation {
         return $DB->get_records_sql($query, ['workshopid' => $this->workshop->id]);
     }    
 }
+?>

@@ -33,25 +33,24 @@ if (!is_siteadmin()) {
 // Validar y recibir datos de la solicitud POST.
 $data = json_decode(file_get_contents('php://input'), true);
 
-// Obtener la API key proporcionada por el profesor.
+// Obtener la API key y workshopId proporcionados por el profesor.
 $api_key = $data['apiKey'];
+$workshopId = $data['workshopId'];
 
-// Asegúrate de que la clave API esté presente.
-if (empty($api_key)) {
+// Asegúrate de que la clave API y el workshopId estén presentes.
+if (empty($api_key) || empty($workshopId)) {
     http_response_code(400);
-    echo json_encode(['error' => 'Se requiere una API Key.']);
+    echo json_encode(['error' => 'Se requiere una API Key y un workshopId.']);
     exit;
 }
 
 // Función para obtener los datos de retroalimentación.
-function get_feedback_data() {
-    global $DB, $PAGE;
+function get_feedback_data($workshopId) {
+    global $DB;
     
-    // Obtener el workshopid desde el contexto de la página actual.
-    $workshopid = $PAGE->cm->instance;
-
     $query = "
         SELECT
+            wa.id AS assessmentid,
             wa.feedbackauthor,
             mws.content
         FROM
@@ -62,11 +61,11 @@ function get_feedback_data() {
             mws.workshopid = :workshopid
     ";
 
-    return $DB->get_records_sql($query, ['workshopid' => $workshopid]);
+    return $DB->get_records_sql($query, ['workshopid' => $workshopId]);
 }
 
 // Obtener los datos de la retroalimentación.
-$feedback_data = get_feedback_data();
+$feedback_data = get_feedback_data($workshopId);
 
 // Construir el 'prompt' dinámicamente para enviar a la API de OpenAI.
 foreach ($feedback_data as $feedback) {
@@ -115,3 +114,4 @@ foreach ($feedback_data as $feedback) {
         echo json_encode(['success' => false, 'error' => 'Error al procesar la solicitud a la IA.']);
     }
 }
+?>

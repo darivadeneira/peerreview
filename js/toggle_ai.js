@@ -3,6 +3,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var otherButton = document.getElementById("id_submit");
     var title = document.getElementById("id_general");
     var table = document.getElementById("feedback-table");
+    if (table) {
+        var workshopId = table.dataset.workshopid; // Obtener el workshopid desde el atributo de datos
+        console.log("Workshop ID:", workshopId);
+    }
 
     if (toggleAiButton && otherButton) {
         otherButton.style.display = "none";
@@ -21,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function () {
         apiKeyInput.id = "api-key-input";
         apiKeyInput.placeholder = "Ingrese su API Key";
         apiKeyInput.className = "form-control";
-
 
         // Crear el botón "Revisar ahora"
         var reviewButton = document.createElement("button");
@@ -56,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
             removeAiColumnFromTable();
         }
 
-        // Restaurar los valores de la API Key y URL si existen
+        // Restaurar los valores de la API Key si existen
         apiKeyInput.value = localStorage.getItem("apiKey") || '';
 
         // Manejar clic en el botón para mostrar/ocultar elementos
@@ -99,27 +102,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Manejar clic en el botón "Revisar ahora"
-        // Manejar clic en el botón "Revisar ahora"
         reviewButton.addEventListener("click", function (event) {
             var apiKey = apiKeyInput.value;
 
             if (!apiKey) {
-                alert("Por favor, ingrese tanto la API Key antes de enviar.");
+                alert("Por favor, ingrese la API Key antes de enviar.");
                 event.preventDefault(); // Prevenir redirección
                 return;
             }
 
-            // Guardar los valores de la API Key y URL
+            // Guardar los valores de la API Key
             localStorage.setItem("apiKey", apiKey);
-
-            var rows = table.tBodies[0].rows;
-            var feedbackData = [];
-
-            // Recopilar las respuestas de la tabla
-            for (var i = 0; i < rows.length; i++) {
- // Suponiendo que las respuestas están en la columna 2
-                feedbackData.push({ assessmentid: i + 1 });
-            }
 
             // Enviar datos al archivo PHP
             fetch("eval/peerreview/evaluate_feedback_ai.php", {
@@ -128,13 +121,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    apiKey: apiKey
+                    apiKey: apiKey,
+                    workshopId: workshopId // Incluir el workshopId en la solicitud
                 }),
             })
-                .then(response => response.json())
-                .then(data => {
+                .then(response => {
+                    console.log("HTTP Status:", response.status);
+                    return response.text(); // Cambiamos a .text() para ver el contenido bruto
+                })
+                .then(text => {
+                    console.log("Raw Response Text:", text); // Inspeccionar el texto crudo
+                    let data;
+                    try {
+                        data = JSON.parse(text); // Intentar parsear manualmente
+                    } catch (error) {
+                        console.error("JSON Parse Error:", error);
+                        throw new Error("La respuesta no es un JSON válido.");
+                    }
+                    console.log("Parsed JSON Data:", data);
                     if (data.success) {
-                        // Actualizar la columna "Revisión IA" con los resultados
                         for (var i = 0; i < data.evaluation.length; i++) {
                             rows[i].cells[rows[i].cells.length - 1].textContent =
                                 data.evaluation[i].review;
