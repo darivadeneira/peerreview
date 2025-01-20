@@ -22,7 +22,11 @@
  * @package   workshopeval_peerreview
  */
 
-$string['pluginname'] = 'Comparison of evaluation with AI';
+$string['pluginname'] = 'Peer Review Evaluation';
 $string['plugin_active'] = 'The plugin is active';
 $string['activate_ai'] = 'Activate AI';
+$string['dberror'] = 'Error in database operation';
+$string['invalidjson'] = 'Invalid JSON data received';
+$string['missingdata'] = 'Required data is missing';
+$string['feedbacksaved'] = 'AI feedback saved successfully';
 
