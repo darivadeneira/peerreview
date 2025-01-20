@@ -246,13 +246,12 @@ document.addEventListener("DOMContentLoaded", function () {
       // Enviar todos los resultados al servidor
       if (resultsToSave.length > 0) {
         try {
-          const saveResponse = await fetch('evaluate_feedback_ai.php', {
+          const saveResponse = await fetch('eval/peerreview/evaluate_feedback_ai.php', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-              apikey: apiKey,
               feedbackdata: JSON.stringify(resultsToSave)
             })
           });

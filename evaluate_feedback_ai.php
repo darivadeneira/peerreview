@@ -6,7 +6,6 @@ if (!isloggedin()) {
     throw new moodle_exception('notloggedin', 'error');
 }
 
-$apikey = required_param('apikey', PARAM_TEXT);
 $feedbackdata = required_param('feedbackdata', PARAM_RAW); // Recibimos los datos en JSON
 
 global $DB;
@@ -30,7 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     // Manejar la solicitud PUT para actualizar los datos
     parse_str(file_get_contents("php://input"), $putData);
-    $apikey = $putData['apikey'];
     $feedbackdata = json_decode($putData['feedbackdata'], true);
 
     // Aquí actualizas la base de datos con los nuevos datos
