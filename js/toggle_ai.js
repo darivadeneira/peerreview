@@ -146,32 +146,34 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (grade) {
-            // Construir el string de rúbricas
-            var rubricsText = rubrics.map((rubric, index) => 
-                `Rúbrica ${index + 1} definición: ${rubric.definition}
-                Rúbrica ${index + 1} grade: ${rubric.grade}`
-            ).join('\n                ');
+            // Construir string de rúbricas de forma concisa
+            var rubricsText = rubrics.map((rubric, index) => {
+                const definitions = rubric.definition.split(',');
+                const grades = rubric.grade.split(',');
+                return `R${index + 1}: ${definitions.map((def, i) => 
+                    `${def}=${grades[i]}pts`
+                ).join('|')}`;
+            }).join('\n');
 
-            // Separar las rúbricas asignadas
+            // Obtener rúbricas asignadas y calificaciones de forma concisa
             var assignedRubrics = grade.rubric_definition.split(',');
+            var assignedGrades = grade.rubric_grade.split(',');
             var rubricAssignmentText = assignedRubrics.map((rubric, index) => 
-                `Rúbrica ${index + 1} asignada: ${rubric}`
-            ).join('\n                ');
+                `R${index + 1}:${rubric}=${assignedGrades[index]}pts`
+            ).join('|');
 
-            // Preparar el contenido con el nuevo formato
-            var content = `
-                Indicaciones a la IA: Evalúa si la respuesta del estudiante es adecuada según la rúbrica.
-                Tema de la evaluación: ${instructionsContent}.
-                ${rubricsText}
-                Respuesta del estudiante: ${grade.student_content}.
-                ${rubricAssignmentText}
-                Retroalimentación supervisor: ${grade.feedback_author}.
-                `;
+            // Mensaje optimizado
+            var content = `EVAL:${instructionsContent}
+RUBRICAS:
+${rubricsText}
+RESPUESTA:${grade.student_content}
+RUBRICA CALIFICADA:${rubricAssignmentText}
+FEEDBACK SUPERVISOR:${grade.feedback_author}`;
 
             messages.push({
                 role: "user",
                 content: content,
-                rowIndex: i  // Guardamos el índice de la fila para referencia
+                rowIndex: i
             });
         } else {
             console.log("No se encontró calificación para el estudiante:", studentId);
@@ -212,7 +214,7 @@ document.addEventListener("DOMContentLoaded", function () {
               messages: [
                 {
                   role: "system",
-                  content: "Evalúa si la respuesta del estudiante es adecuada según la rúbrica proporcionada. Responde únicamente con 'Sin Novedad' o 'Revisión'. ",
+                  content: "Tu tarea es verificar si la calificación asignada coincide con las rúbricas establecidas, independientemente de si la respuesta es correcta o no. IMPORTANTE:\n1. Responde 'Sin Novedad' si la calificación asignada corresponde a la rúbrica, aunque la respuesta sea incorrecta.\n2. Responde 'Revisión: [Pregunta X]' SOLO si la calificación no coincide con lo que indica la rúbrica, donde X es el número de la pregunta que tiene discrepancia en su calificación.\nEjemplo: Si una respuesta incorrecta recibió la calificación más baja según la rúbrica, responde 'Sin Novedad'. Si una respuesta recibió una calificación que no corresponde a su nivel según la rúbrica, responde 'Revisión: Pregunta 1'.",
                 },
                 messages[i]  // Enviamos solo un mensaje por petición
               ],
