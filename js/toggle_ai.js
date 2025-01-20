@@ -152,65 +152,58 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Mensajes a enviar:", messages);
 
     // Manejar clic en el botón "Revisar ahora"
-    reviewButton.addEventListener("click", function (event) {
-      event.preventDefault(); // Prevenir redirección
+    reviewButton.addEventListener("click", async function (event) {
+      event.preventDefault();
       var apiKey = apiKeyInput.value;
 
       if (!apiKey) {
         alert("Por favor, ingrese la API Key antes de enviar.");
-        event.preventDefault(); // Prevenir redirección
         return;
       }
 
-      // Guardar los valores de la API Key
       localStorage.setItem("apiKey", apiKey);
 
-      // Preparamos los datos para enviar a la API de OpenAI
-
-      // Realizar la solicitud a la API de OpenAI
-      fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`, // Sustituye con tu API Key de OpenAI
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content:
-                "Evalúa si la respuesta del estudiante es adecuada según la rúbrica proporcionada. Responde únicamente con 'Sin Novedad' o 'Revisión'. ",
+      // Procesar cada mensaje individualmente
+      for (let i = 0; i < messages.length; i++) {
+        try {
+          const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
             },
-            ...messages,
-          ],
-          temperature: 0.5,
-          max_tokens: 1000,
-        }),
-      })
-        .then((response) => {
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "system",
+                  content: "Evalúa si la respuesta del estudiante es adecuada según la rúbrica proporcionada. Responde únicamente con 'Sin Novedad' o 'Revisión'. ",
+                },
+                messages[i]  // Enviamos solo un mensaje por petición
+              ],
+              temperature: 0.5,
+              max_tokens: 1000,
+            }),
+          });
+
           if (!response.ok) {
             throw new Error(`Error en la solicitud: ${response.statusText}`);
           }
-          return response.json();
-        })
-        .then((data) => {
+
+          const data = await response.json();
+
           if (data.choices && data.choices[0].message) {
-            console.log("Evaluación exitosa:", data);
-            // Procesar y mostrar la respuesta de la IA
-            for (var i = 0; i < data.choices.length; i++) {
-              // Actualizar la columna de "Revisión IA" en la tabla
-              var cell = rows[gradeIndex].insertCell(-1);
-              cell.className = "ia_data";
-              cell.textContent = message;
-            }
-          } else {
-            console.error("Error en la evaluación:", data.error);
+            console.log(`Evaluación ${i + 1} exitosa:`, data);
+            // Actualizar la columna de "Revisión IA" en la tabla
+            var cell = table.tBodies[0].rows[i].insertCell(-1);
+            cell.className = "ia_data";
+            cell.textContent = data.choices[0].message.content;
           }
-        })
-        .catch((error) => {
-          console.error("Error en el procesamiento de la solicitud:", error);
-        });
+
+        } catch (error) {
+          console.error(`Error en el procesamiento de la solicitud ${i + 1}:`, error);
+        }
+      }
     });
   }
 
