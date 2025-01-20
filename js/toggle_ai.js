@@ -246,20 +246,30 @@ document.addEventListener("DOMContentLoaded", function () {
       // Enviar todos los resultados al servidor
       if (resultsToSave.length > 0) {
         try {
-          const formData = new FormData();
-          formData.append('feedbackdata', JSON.stringify(resultsToSave));
+          console.log('Datos a enviar:', resultsToSave);
+          
+          // Usar el core/ajax de Moodle
+          require(['core/ajax'], function(ajax) {
+            var promises = ajax.call([{
+              methodname: 'workshopeval_peerreview_save_feedback',
+              args: { 
+                feedbackdata: JSON.stringify(resultsToSave)
+              }
+            }]);
 
-          const saveResponse = await fetch('/mod/workshop/eval/peerreview/evaluate_feedback_ai.php', {
-            method: 'POST',
-            body: formData
+            promises[0].done(function(response) {
+              console.log('Respuesta del servidor:', response);
+              if (response.status === 'success') {
+                alert('Resultados guardados correctamente');
+              } else {
+                throw new Error(response.message || 'Error al guardar');
+              }
+            }).fail(function(error) {
+              console.error('Error al guardar:', error);
+              alert('Error al guardar los resultados: ' + error.message);
+            });
           });
 
-          const responseText = await saveResponse.text();
-          console.log('Respuesta del servidor:', responseText);
-
-          if (!saveResponse.ok) {
-            throw new Error(`Error del servidor: ${saveResponse.status} - ${responseText}`);
-          }
         } catch (error) {
           console.error('Error completo:', error);
           alert('Error al guardar los resultados: ' + error.message);
