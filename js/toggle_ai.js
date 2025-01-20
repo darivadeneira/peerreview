@@ -152,13 +152,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 Rúbrica ${index + 1} grade: ${rubric.grade}`
             ).join('\n                ');
 
+            // Separar las rúbricas asignadas
+            var assignedRubrics = grade.rubric_definition.split(',');
+            var rubricAssignmentText = assignedRubrics.map((rubric, index) => 
+                `Rúbrica ${index + 1} asignada: ${rubric}`
+            ).join('\n                ');
+
             // Preparar el contenido con el nuevo formato
             var content = `
                 Indicaciones a la IA: Evalúa si la respuesta del estudiante es adecuada según la rúbrica.
                 Tema de la evaluación: ${instructionsContent}.
                 ${rubricsText}
                 Respuesta del estudiante: ${grade.student_content}.
-                Rúbrica asignada: ${grade.rubric_definition}.
+                ${rubricAssignmentText}
                 Retroalimentación supervisor: ${grade.feedback_author}.
                 `;
 
