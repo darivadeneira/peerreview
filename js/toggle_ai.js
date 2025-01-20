@@ -108,42 +108,46 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     var instructionKey = Object.keys(feedbackData.instructions)[0];
-    var instructionsContent =
-      feedbackData.instructions[instructionKey].instructauthors;
+    var instructionsContent = feedbackData.instructions[instructionKey].instructauthors;
     var messages = [];
 
-    var allRubricDefinitions = [];
-    var allRubricGrades = [];
-
+    // Crear un array de objetos con las rúbricas
+    var rubrics = [];
     for (var rubricKey in feedbackData.rubrics) {
-      if (feedbackData.rubrics.hasOwnProperty(rubricKey)) {
-        var rubric = feedbackData.rubrics[rubricKey];
-        allRubricDefinitions.push(rubric.rubric_definition);
-        allRubricGrades.push(rubric.rubric_grade);
-      }
+        if (feedbackData.rubrics.hasOwnProperty(rubricKey)) {
+            var rubric = feedbackData.rubrics[rubricKey];
+            rubrics.push({
+                definition: rubric.rubric_definition,
+                grade: rubric.rubric_grade
+            });
+        }
     }
 
     for (var gradeKey in feedbackData.grades) {
-      if (feedbackData.grades.hasOwnProperty(gradeKey)) {
-        var grade = feedbackData.grades[gradeKey];
+        if (feedbackData.grades.hasOwnProperty(gradeKey)) {
+            var grade = feedbackData.grades[gradeKey];
 
-        // Preparar el contenido incluyendo todas las rúbricas
-        var content = `
+            // Construir el string de rúbricas
+            var rubricsText = rubrics.map((rubric, index) => 
+                `Rúbrica ${index + 1} definición: ${rubric.definition}
+                Rúbrica ${index + 1} grade: ${rubric.grade}`
+            ).join('\n                ');
+
+            // Preparar el contenido con el nuevo formato
+            var content = `
                 Indicaciones a la IA: Evalúa si la respuesta del estudiante es adecuada según la rúbrica.
                 Tema de la evaluación: ${instructionsContent}.
-                Rúbrica definición: ${allRubricDefinitions.join(" - ")}.
-                Rúbrica grade: ${allRubricGrades.join(" - ")}.
+                ${rubricsText}
                 Respuesta del estudiante: ${grade.student_content}.
                 Rúbrica asignada: ${grade.rubric_definition}.
                 Retroalimentación supervisor: ${grade.feedback_author}.
                 `;
 
-        // Agregar el mensaje al array de mensajes
-        messages.push({
-          role: "user",
-          content: content,
-        });
-      }
+            messages.push({
+                role: "user",
+                content: content
+            });
+        }
     }
     console.log("Mensajes a enviar:", messages);
 
