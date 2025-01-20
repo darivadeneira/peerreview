@@ -186,9 +186,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
       localStorage.setItem("apiKey", apiKey);
 
+      // Array para almacenar los resultados
+      let resultsToSave = [];
+
       // Procesar cada mensaje individualmente
       for (let i = 0; i < messages.length; i++) {
         try {
+          const row = table.tBodies[0].rows[messages[i].rowIndex];
+          const assessmentId = row.cells[0].textContent.trim(); // Obtener assessment ID de la primera columna
+
           const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -216,18 +222,45 @@ document.addEventListener("DOMContentLoaded", function () {
           const data = await response.json();
 
           if (data.choices && data.choices[0].message) {
+            const aiResponse = data.choices[0].message.content;
             console.log(`Evaluación ${i + 1} exitosa:`, data);
-            // Encontrar la celda de Revisión IA existente
-            var row = table.tBodies[0].rows[messages[i].rowIndex];
-            // Buscar la celda con clase 'ia_data'
+            
+            // Actualizar la celda en la tabla
             var iaCell = row.querySelector('.ia_data');
             if (iaCell) {
-              iaCell.textContent = data.choices[0].message.content;
+              iaCell.textContent = aiResponse;
             }
+
+            // Agregar resultado al array
+            resultsToSave.push({
+              assesmentid: assessmentId,
+              feedback_ai: aiResponse
+            });
           }
 
         } catch (error) {
           console.error(`Error en el procesamiento de la solicitud ${i + 1}:`, error);
+        }
+      }
+
+      // Enviar todos los resultados al servidor
+      if (resultsToSave.length > 0) {
+        try {
+          const saveResponse = await fetch('evaluate_feedback_ai.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              apikey: apiKey,
+              feedbackdata: JSON.stringify(resultsToSave)
+            })
+          });
+
+          const saveResult = await saveResponse.json();
+          console.log('Resultados guardados:', saveResult);
+        } catch (error) {
+          console.error('Error al guardar los resultados:', error);
         }
       }
     });
