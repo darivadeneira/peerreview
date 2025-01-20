@@ -123,10 +123,25 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    for (var gradeKey in feedbackData.grades) {
-        if (feedbackData.grades.hasOwnProperty(gradeKey)) {
-            var grade = feedbackData.grades[gradeKey];
+    // Obtener las filas de la tabla
+    var tableRows = table.tBodies[0].rows;
+    
+    // Iterar sobre las filas de la tabla para mantener el orden
+    for (let i = 0; i < tableRows.length; i++) {
+        var row = tableRows[i];
+        var studentId = row.getAttribute('data-student-id');
+        var grade = null;
 
+        // Buscar la calificación correspondiente a esta fila
+        for (var gradeKey in feedbackData.grades) {
+            if (feedbackData.grades.hasOwnProperty(gradeKey) && 
+                feedbackData.grades[gradeKey].student_id === studentId) {
+                grade = feedbackData.grades[gradeKey];
+                break;
+            }
+        }
+
+        if (grade) {
             // Construir el string de rúbricas
             var rubricsText = rubrics.map((rubric, index) => 
                 `Rúbrica ${index + 1} definición: ${rubric.definition}
@@ -145,10 +160,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             messages.push({
                 role: "user",
-                content: content
+                content: content,
+                rowIndex: i  // Guardamos el índice de la fila para referencia
             });
         }
     }
+
     console.log("Mensajes a enviar:", messages);
 
     // Manejar clic en el botón "Revisar ahora"
@@ -194,8 +211,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
           if (data.choices && data.choices[0].message) {
             console.log(`Evaluación ${i + 1} exitosa:`, data);
-            // Actualizar la columna de "Revisión IA" en la tabla
-            var cell = table.tBodies[0].rows[i].insertCell(-1);
+            // Usar el índice guardado para actualizar la fila correcta
+            var cell = table.tBodies[0].rows[messages[i].rowIndex].insertCell(-1);
             cell.className = "ia_data";
             cell.textContent = data.choices[0].message.content;
           }
