@@ -84,7 +84,7 @@ class workshop_peerreview_evaluation extends workshop_best_evaluation {
                 mws.workshopid,
                 mws.content,
                 wp.feedback_ai,
-                mws.authorid as author_id,
+                mws.authorid,
                 wa.id AS assessment_id
             FROM
                 {workshop_submissions} mws
