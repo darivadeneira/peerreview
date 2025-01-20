@@ -129,18 +129,19 @@ document.addEventListener("DOMContentLoaded", function () {
     // Iterar sobre las filas de la tabla para mantener el orden
     for (let i = 0; i < tableRows.length; i++) {
         var row = tableRows[i];
-        console.log(row);
-        var studentId = row.getAttribute('Author ID');
-        if(!studentId) throw new Error();
-        console.log(studentId);
+        // Obtener el ID del autor de la segunda columna (índice 1)
+        var studentId = row.cells[1].textContent.trim();
+        console.log("ID del estudiante encontrado:", studentId);
         var grade = null;
 
         // Buscar la calificación correspondiente a esta fila
         for (var gradeKey in feedbackData.grades) {
-            if (feedbackData.grades.hasOwnProperty(gradeKey) && 
-                feedbackData.grades[gradeKey].student_id === studentId) {
-                grade = feedbackData.grades[gradeKey];
-                break;
+            if (feedbackData.grades.hasOwnProperty(gradeKey)) {
+                // Convertir ambos valores a string para comparación
+                if (String(feedbackData.grades[gradeKey].student_id) === String(studentId)) {
+                    grade = feedbackData.grades[gradeKey];
+                    break;
+                }
             }
         }
 
@@ -166,6 +167,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 content: content,
                 rowIndex: i  // Guardamos el índice de la fila para referencia
             });
+        } else {
+            console.log("No se encontró calificación para el estudiante:", studentId);
         }
     }
 
