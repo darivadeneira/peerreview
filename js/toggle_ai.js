@@ -217,10 +217,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
           if (data.choices && data.choices[0].message) {
             console.log(`Evaluación ${i + 1} exitosa:`, data);
-            // Usar el índice guardado para actualizar la fila correcta
-            var cell = table.tBodies[0].rows[messages[i].rowIndex].insertCell(-1);
-            cell.className = "ia_data";
-            cell.textContent = data.choices[0].message.content;
+            // Encontrar la celda de Revisión IA existente
+            var row = table.tBodies[0].rows[messages[i].rowIndex];
+            // Buscar la celda con clase 'ia_data'
+            var iaCell = row.querySelector('.ia_data');
+            if (iaCell) {
+              iaCell.textContent = data.choices[0].message.content;
+            }
           }
 
         } catch (error) {
