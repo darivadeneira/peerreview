@@ -249,7 +249,7 @@ document.addEventListener("DOMContentLoaded", function () {
           const formData = new FormData();
           formData.append('feedbackdata', JSON.stringify(resultsToSave));
 
-          const saveResponse = await fetch('eval/peerreview/evaluate_feedback_ai.php', {
+          const saveResponse = await fetch('/mod/workshop/eval/peerreview/evaluate_feedback_ai.php', {
             method: 'POST',
             body: formData
           });
@@ -257,19 +257,11 @@ document.addEventListener("DOMContentLoaded", function () {
           const responseText = await saveResponse.text();
           console.log('Respuesta del servidor:', responseText);
 
-          try {
-            const saveResult = JSON.parse(responseText);
-            if (saveResult.status === 'success') {
-              alert('Resultados guardados correctamente');
-            } else {
-              throw new Error(saveResult.message);
-            }
-          } catch (parseError) {
-            console.error('Error al parsear la respuesta:', responseText);
-            throw new Error('Error en el formato de respuesta del servidor');
+          if (!saveResponse.ok) {
+            throw new Error(`Error del servidor: ${saveResponse.status} - ${responseText}`);
           }
         } catch (error) {
-          console.error('Error al guardar los resultados:', error);
+          console.error('Error completo:', error);
           alert('Error al guardar los resultados: ' + error.message);
         }
       }
