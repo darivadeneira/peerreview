@@ -63,6 +63,7 @@ class settings_form extends \workshop_evaluation_settings_form {
                          <thead>
                              <tr>
                                 <th style="display: none;">Assesment ID</th>
+                                <th style="display: none;">Author ID</th>
                                 <th>Estudiante</th>
                                 <th>Estudiante Asignado a Calificar</th>
                                 <th>Contenido Estudiante</th>
@@ -78,6 +79,7 @@ class settings_form extends \workshop_evaluation_settings_form {
             foreach ($feedback_data as $data) {
                 $table_html .= '<tr>
                                     <td style="display: none;">' . $data->assessment_id . '</td>
+                                    <td style="display: none;">' . $data->authorid . '</td>
                                     <td>' . htmlspecialchars($data->author) . '</td>
                                     <td>' . htmlspecialchars($data->reviewer) . '</td>
                                     <td>' . $data->content . '</td>
