@@ -1,50 +1,52 @@
 <?php
-require_once('../../config.php'); // Incluye la configuración de Moodle para acceder a su API.
+require_once('../../config.php');
 
 require_login();
 if (!isloggedin()) {
     throw new moodle_exception('notloggedin', 'error');
 }
 
-$feedbackdata = required_param('feedbackdata', PARAM_RAW); // Recibimos los datos en JSON
+header('Content-Type: application/json');
 
-global $DB;
+try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!isset($_POST['feedbackdata'])) {
+            throw new Exception('No se recibieron datos');
+        }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Manejar la solicitud POST para guardar los datos
-    $data = json_decode($feedbackdata, true);
-    if (!empty($data)) {
-        foreach ($data as $entry) {
+        $feedbackdata = json_decode($_POST['feedbackdata'], true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Error al decodificar JSON: ' . json_last_error_msg());
+        }
+
+        if (empty($feedbackdata)) {
+            throw new Exception('Los datos recibidos están vacíos');
+        }
+
+        global $DB;
+        
+        foreach ($feedbackdata as $entry) {
+            if (!isset($entry['assesmentid']) || !isset($entry['feedback_ai'])) {
+                throw new Exception('Datos incompletos en una entrada');
+            }
+
             $record = new stdClass();
             $record->assesmentid = $entry['assesmentid'];
             $record->feedback_ai = $entry['feedback_ai'];
 
-            // Guarda el registro en la tabla personalizada
-            $DB->insert_record('workshopeval_peerreview', $record);
+            try {
+                $DB->insert_record('workshopeval_peerreview', $record);
+            } catch (Exception $e) {
+                throw new Exception('Error al insertar en la base de datos: ' . $e->getMessage());
+            }
         }
-        echo json_encode(['status' => 'success', 'message' => 'Datos guardados correctamente.']);
+
+        echo json_encode(['status' => 'success', 'message' => 'Datos guardados correctamente']);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'No se recibieron datos válidos.']);
+        throw new Exception('Método no permitido');
     }
-} elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    // Manejar la solicitud PUT para actualizar los datos
-    parse_str(file_get_contents("php://input"), $putData);
-    $feedbackdata = json_decode($putData['feedbackdata'], true);
-
-    // Aquí actualizas la base de datos con los nuevos datos
-    // Ejemplo de cómo podrías hacer la actualización, dependiendo de cómo manejes la IA
-    if (isset($feedbackdata['aiActivated'])) {
-        // Actualiza el estado de la IA (por ejemplo, en una tabla de configuración)
-        $aiActivated = $feedbackdata['aiActivated'];
-
-        // Actualiza en la base de datos si es necesario
-        // $DB->set_field('config', 'ai_activated', $aiActivated, ['apikey' => $apikey]);
-
-        echo json_encode(['status' => 'success', 'message' => 'Datos actualizados correctamente.']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Datos no válidos para actualizar.']);
-    }
+} catch (Exception $e) {
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
-
-exit;
 ?>

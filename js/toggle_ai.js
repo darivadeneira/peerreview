@@ -246,20 +246,31 @@ document.addEventListener("DOMContentLoaded", function () {
       // Enviar todos los resultados al servidor
       if (resultsToSave.length > 0) {
         try {
+          const formData = new FormData();
+          formData.append('feedbackdata', JSON.stringify(resultsToSave));
+
           const saveResponse = await fetch('eval/peerreview/evaluate_feedback_ai.php', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-              feedbackdata: JSON.stringify(resultsToSave)
-            })
+            body: formData
           });
 
-          const saveResult = await saveResponse.json();
-          console.log('Resultados guardados:', saveResult);
+          const responseText = await saveResponse.text();
+          console.log('Respuesta del servidor:', responseText);
+
+          try {
+            const saveResult = JSON.parse(responseText);
+            if (saveResult.status === 'success') {
+              alert('Resultados guardados correctamente');
+            } else {
+              throw new Error(saveResult.message);
+            }
+          } catch (parseError) {
+            console.error('Error al parsear la respuesta:', responseText);
+            throw new Error('Error en el formato de respuesta del servidor');
+          }
         } catch (error) {
           console.error('Error al guardar los resultados:', error);
+          alert('Error al guardar los resultados: ' + error.message);
         }
       }
     });
