@@ -4,16 +4,20 @@
     xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    <TABLE NAME="workshopeval_peerreview" COMMENT="Settings for the grading evaluation subplugin Comparison the assessment with IA.">
+    <TABLE NAME="workshopeval_peerreview" COMMENT="Stores AI feedback for workshop assessments">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="assessmentid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="feedback_ai" TYPE="CHAR" LENGTH="25" NOTNULL="false" DEFAULT="Pendiente" SEQUENCE="false"/>
+        <FIELD NAME="feedback_ai" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="fkuq_workshop" TYPE="foreign-unique" FIELDS="assessmentid" REFTABLE="workshop_assessment" REFFIELDS="id" COMMENT="Every workshop can have only one settings record"/>
+        <KEY NAME="assessmentid" TYPE="foreign" FIELDS="assessmentid" REFTABLE="workshop_assessments" REFFIELDS="id"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="assessmentid" UNIQUE="true" FIELDS="assessmentid"/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

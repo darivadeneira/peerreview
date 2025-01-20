@@ -18,32 +18,64 @@ class external extends \external_api {
     public static function save_feedback($feedbackdata) {
         global $DB;
 
-        // Parámetros de contexto
+        // Parámetros de contexto y validación
         $params = self::validate_parameters(self::save_feedback_parameters(), array(
             'feedbackdata' => $feedbackdata
         ));
 
-        $data = json_decode($params['feedbackdata'], true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \moodle_exception('invalidjson', 'workshopeval_peerreview');
-        }
-
-        foreach ($data as $entry) {
-            $record = new \stdClass();
-            $record->assesmentid = $entry['assesmentid'];
-            $record->feedback_ai = $entry['feedback_ai'];
-
-            try {
-                $DB->insert_record('workshopeval_peerreview', $record);
-            } catch (\dml_exception $e) {
-                throw new \moodle_exception('dberror', 'workshopeval_peerreview');
+        try {
+            $data = json_decode($params['feedbackdata'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \moodle_exception('invalidjson', 'workshopeval_peerreview');
             }
-        }
 
-        return array(
-            'status' => 'success',
-            'message' => 'Datos guardados correctamente'
-        );
+            // Iniciar transacción
+            $transaction = $DB->start_delegated_transaction();
+
+            foreach ($data as $entry) {
+                // Validar datos requeridos
+                if (!isset($entry['assesmentid']) || !isset($entry['feedback_ai'])) {
+                    throw new \moodle_exception('missingdata', 'workshopeval_peerreview');
+                }
+
+                // Preparar registro
+                $record = new \stdClass();
+                $record->assessmentid = clean_param($entry['assesmentid'], PARAM_INT);
+                $record->feedback_ai = clean_param($entry['feedback_ai'], PARAM_TEXT);
+                $record->timecreated = time();
+
+                // Verificar si ya existe un registro para este assessment
+                $existing = $DB->get_record('workshopeval_peerreview', 
+                    array('assessmentid' => $record->assessmentid));
+
+                if ($existing) {
+                    // Actualizar registro existente
+                    $record->id = $existing->id;
+                    if (!$DB->update_record('workshopeval_peerreview', $record)) {
+                        throw new \moodle_exception('dberror', 'workshopeval_peerreview');
+                    }
+                } else {
+                    // Insertar nuevo registro
+                    if (!$DB->insert_record('workshopeval_peerreview', $record)) {
+                        throw new \moodle_exception('dberror', 'workshopeval_peerreview');
+                    }
+                }
+            }
+
+            // Confirmar transacción
+            $transaction->allow_commit();
+
+            return array(
+                'status' => 'success',
+                'message' => get_string('feedbacksaved', 'workshopeval_peerreview')
+            );
+
+        } catch (\Exception $e) {
+            if (isset($transaction)) {
+                $transaction->rollback($e);
+            }
+            throw new \moodle_exception('dberror', 'workshopeval_peerreview', '', $e->getMessage());
+        }
     }
 
     public static function save_feedback_returns() {

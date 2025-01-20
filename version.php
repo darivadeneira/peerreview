@@ -17,14 +17,15 @@
 /**
  * Version information.
  *
- * @copyright 2014-2023 Albert Gasset <albertgasset@fsfe.org>
+ * @copyright 2025 Erick Lasluisa, Ariel Rivadeneira, Augusto Salazar <ealasluisa@espe.edu.ec, darivadeneira7@espe.edu.ec, casalazar7@espe.edu.ec>
  * @license   https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   workshopeval_peerreview
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'workshopeval_peerreview';
-$plugin->version = 2025190101;
+$plugin->version = 2025190104;
 $plugin->requires = 2022112800;
 $plugin->release = '1.0';
 $plugin->maturity = MATURITY_STABLE;
