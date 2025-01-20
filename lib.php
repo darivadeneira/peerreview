@@ -82,7 +82,9 @@ class workshop_peerreview_evaluation extends workshop_best_evaluation {
                 wa.feedbackauthor,
                 wa.grade,
                 mws.workshopid,
-                mws.content
+                mws.content,
+                wp.feedback_ai,
+                wa.id AS assessment_id
             FROM
                 {workshop_submissions} mws
             JOIN
@@ -91,6 +93,8 @@ class workshop_peerreview_evaluation extends workshop_best_evaluation {
                 {workshop_assessments} wa ON mws.id = wa.submissionid
             JOIN
                 {user} u2 ON wa.reviewerid = u2.id
+            JOIN
+                {workshopeval_peerreview} wp ON wa.id = wp.assessmentid
             WHERE
                 mws.workshopid = :workshopid
         ";

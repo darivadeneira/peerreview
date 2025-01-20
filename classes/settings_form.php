@@ -46,18 +46,29 @@ class settings_form extends \workshop_evaluation_settings_form {
         $rubriclvls_data = $evaluation->get_rubriclvl_data();
         $grades_data = $evaluation->get_grades_data();
         $instructions_data = $evaluation->get_instruction_data();
+
+        $response_data = [
+            'rubrics' => $rubriclvls_data,
+            'grades' => $grades_data,
+            'instructions' => $instructions_data,
+        ];
+        
+        $feedback_data_json = json_encode($response_data); // Codificar los datos como JSON
+        echo '<script>var feedbackData = ' . $feedback_data_json . ';</script>';
+
         $workshopid = $this->_customdata['workshop']->id; // Obtener el workshopid
 
         // Create an HTML table to display the results
         $table_html = '<table id="feedback-table" class="table table-striped" data-workshopid="' . $workshopid . '">
                          <thead>
                              <tr>
-                                <th>Workshop ID</th>
+                                <th style="display: none;">Assesment ID</th>
                                 <th>Estudiante</th>
                                 <th>Estudiante Asignado a Calificar</th>
                                 <th>Contenido Estudiante</th>
                                 <th>Retroalimentación</th>
                                 <th>Calificación</th>
+                                <th style="display: none;" id=ia_header>Revisión IA</th>
                              </tr>
                          </thead>
                          <tbody>';
@@ -66,12 +77,13 @@ class settings_form extends \workshop_evaluation_settings_form {
         if ($feedback_data) {
             foreach ($feedback_data as $data) {
                 $table_html .= '<tr>
-                                    <td>' . htmlspecialchars($data->workshopid) . '</td>
+                                    <td style="display: none;">' . $data->assessment_id . '</td>
                                     <td>' . htmlspecialchars($data->author) . '</td>
                                     <td>' . htmlspecialchars($data->reviewer) . '</td>
                                     <td>' . $data->content . '</td>
                                     <td>' . $data->feedbackauthor . '</td>
                                     <td>' . htmlspecialchars($data->grade) . '</td>
+                                    <td style="display: none;" class="ia_data">' . $data->feedback_ai . '</td>
                                 </tr>';
             }
         } else {

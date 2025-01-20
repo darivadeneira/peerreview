@@ -47,7 +47,7 @@ if (empty($data['feedbackData']) || !is_array($data['feedbackData'])) {
 
 // Obtener la API key proporcionada por el profesor.
 $api_key = $data['apiKey'];
-$feedback_data = $data['feedbackData'];
+$feedback_data = $data['feedback'];
 
 // Construir el 'prompt' dinámicamente para enviar a la API de OpenAI.
 foreach ($feedback_data as $feedback) {

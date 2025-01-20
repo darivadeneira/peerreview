@@ -3,6 +3,15 @@ document.addEventListener('DOMContentLoaded', function () {
     var otherButton = document.getElementById("id_submit");
     var title = document.getElementById("id_general");
     var table = document.getElementById("feedback-table");
+    var ia_header = document.getElementById("ia_header");
+    var ia_data = document.getElementsByClassName("ia_data");
+
+    // Asegurarte de que 'feedbackData' está disponible antes de usarla
+    if (typeof feedbackData === "undefined") {
+        console.error("Los datos de retroalimentación no están disponibles.");
+        return;
+    }
+    console.log("Datos de retroalimentación:", feedbackData);
 
     if (toggleAiButton && otherButton) {
         otherButton.style.display = "none";
@@ -67,6 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (button.classList.contains("btn-primary")) {
                 // Mostrar inputs y botón
                 apiKeyInput.style.display = "inline-block";
+                apiKeyInput.type = 'password';
                 reviewButton.style.display = "inline-block";
 
                 // Añadir la columna "Revisión IA" en la tabla
@@ -97,114 +107,119 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
+        var instructionKey = Object.keys(feedbackData.instructions)[0]; // Obtener la clave
+        var instructionsContent = feedbackData.instructions[instructionKey].instructauthors;
+        var messages = [];
+
+        for (var rubricKey in feedbackData.rubrics) {
+            if (feedbackData.rubrics.hasOwnProperty(rubricKey)) {
+                var rubric = feedbackData.rubrics[rubricKey];
+                var rubricDefinition = rubric.rubric_definition.split(',');
+                var rubricGrades = rubric.rubric_grade.split(',');
+
+
+                // Recorrer las calificaciones
+                for (var gradeKey in feedbackData.grades) {
+                    if (feedbackData.grades.hasOwnProperty(gradeKey)) {
+                        var grade = feedbackData.grades[gradeKey];
+
+                        // Preparar el contenido en el formato solicitado
+                        var content = `
+                        Indicaciones a la IA: Evalúa si la respuesta del estudiante es adecuada según la rúbrica.
+                        Tema de la evaluación: ${instructionsContent}.
+                        Rúbrica definición: ${rubricDefinition.join(' - ')}.
+                        Rúbrica grade: ${rubricGrades.join(' - ')}.
+                        Respuesta del estudiante: ${grade.student_content}.
+                        Rúbrica asignada: ${grade.rubric_definition}.
+                        Retroalimentación supervisor: ${grade.feedback_author}.
+                        `;
+
+                        // Agregar el mensaje al array de mensajes
+                        messages.push({
+                            role: "user",
+                            content: content
+                        });
+                    }
+                }
+            }
+        }
+        console.log("Mensajes a enviar:", messages);
+
         // Manejar clic en el botón "Revisar ahora"
         reviewButton.addEventListener("click", function (event) {
             event.preventDefault(); // Prevenir redirección
             var apiKey = apiKeyInput.value;
-        
+
             if (!apiKey) {
                 alert("Por favor, ingrese la API Key antes de enviar.");
                 event.preventDefault(); // Prevenir redirección
                 return;
             }
-        
+
             // Guardar los valores de la API Key
             localStorage.setItem("apiKey", apiKey);
-        
-            var rows = table.tBodies[0].rows;
-            var feedbackData = [];
-        
-            // Recopilar las respuestas de la tabla
-            for (var i = 0; i < rows.length; i++) {
-                var cells = rows[i].cells;
-        
-                // Recopilar los datos de cada fila
-                var data = {
-                    author: cells[1].textContent,
-                    reviewer: cells[2].textContent,
-                    feedbackauthor: cells[3].textContent,
-                };
-        
-                feedbackData.push(data);  // Agregar la fila al array
-            }
-        
-            // Realizar la petición a GPT-3 para evaluar los comentarios
+
+            // Preparamos los datos para enviar a la API de OpenAI
+
+
+            // Realizar la solicitud a la API de OpenAI
             fetch("https://api.openai.com/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`,
+                    "Authorization": `Bearer ${apiKey}`  // Sustituye con tu API Key de OpenAI
                 },
                 body: JSON.stringify({
-                    model: "gpt-4o-mini", 
+                    model: "gpt-4o-mini",
                     messages: [
                         {
                             role: "system",
-                            content: "Evalúa si esta retroalimentación corrige adecuadamente la respuesta del estudiante sobre el tema dado. Responde únicamente con 'Alineada' o 'Revisión'."
+                            content: "Evalúa si la respuesta del estudiante es adecuada según la rúbrica proporcionada. Responde únicamente con 'Sin Novedad' o 'Revisión'. "
                         },
-                        ...feedbackData.map(data => ({
-                            role: "user",
-                            content: `Comentario: ${data.feedbackauthor}`
-                        }))
+                        ...messages
                     ],
                     temperature: 0.5,
-                    max_tokens: 1000,
-                }),
+                    max_tokens: 1000
+                })
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Error en la solicitud: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.choices && data.choices[0].message) {
-                    console.log("Evaluación exitosa:", data);
-                    // Actualizar la columna "Revisión IA" con los resultados
-                    for (var i = 0; i < data.choices.length; i++) {
-                        rows[i].cells[rows[i].cells.length - 1].textContent =
-                            data.choices[i].message.content.trim();
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error en la solicitud: ${response.statusText}`);
                     }
-                    alert("Evaluación completada con éxito.");
-                } else {
-                    console.error("Error en la evaluación:", data.error);
-                    alert("Error al procesar la evaluación de la IA.");
-                }
-            })
-            .catch(error => {
-                console.error("Error en el procesamiento de la solicitud:", error);
-                alert("Ocurrió un error al intentar procesar la solicitud: " + error.message);
-            });
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.choices && data.choices[0].message) {
+                        console.log("Evaluación exitosa:", data);
+                        // Procesar y mostrar la respuesta de la IA
+                        for (var i = 0; i < data.choices.length; i++) {
+                            // Actualizar la columna de "Revisión IA" en la tabla
+                            var cell = rows[gradeIndex].insertCell(-1);
+                            cell.className = "ia_data";
+                            cell.textContent = message;
+                        }
+                    } else {
+                        console.error("Error en la evaluación:", data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error en el procesamiento de la solicitud:", error);
+                });
         });
-        
+
     }
 
     function addAiColumnToTable() {
-        var headerRow = table.tHead.rows[0];
-        var rows = table.tBodies[0].rows;
-
-        // Añadir la columna "Revisión IA" en la tabla
-        var newHeaderCell = document.createElement("th");
-        newHeaderCell.textContent = "Revisión IA";
-        headerRow.appendChild(newHeaderCell);
-
-        // Añadir las celdas de "Pendiente" para cada fila
-        for (var i = 0; i < rows.length; i++) {
-            var newCell = document.createElement("td");
-            newCell.textContent = "Pendiente";
-            rows[i].appendChild(newCell);
+        for (var i = 0; i < ia_data.length; i++) {
+            ia_data[i].style.display = 'inline-block';
         }
+        ia_header.style.display = 'inline-block';
     }
 
     function removeAiColumnFromTable() {
-        var headerRow = table.tHead.rows[0];
-        var rows = table.tBodies[0].rows;
-
-        // Eliminar la columna "Revisión IA" de la tabla
-        headerRow.removeChild(headerRow.lastChild);
-
-        for (var i = 0; i < rows.length; i++) {
-            rows[i].removeChild(rows[i].lastChild);
+        for (var i = 0; i < ia_data.length; i++) {
+            ia_data[i].style.display = 'none';
         }
+        ia_header.style.display = 'none';
     }
 });
