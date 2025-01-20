@@ -129,7 +129,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // Iterar sobre las filas de la tabla para mantener el orden
     for (let i = 0; i < tableRows.length; i++) {
         var row = tableRows[i];
-        var studentId = row.getAttribute('data-student-id');
+        console.log(row);
+        var studentId = row.getAttribute('Author ID');
+        if(!studentId) throw new Error();
+        console.log(studentId);
         var grade = null;
 
         // Buscar la calificación correspondiente a esta fila
