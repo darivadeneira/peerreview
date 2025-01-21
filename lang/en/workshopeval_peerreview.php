@@ -25,10 +25,5 @@
 $string['pluginname'] = 'Peer Review Evaluation';
 $string['plugin_active'] = 'The plugin is active';
 $string['activate_ai'] = 'Activate AI';
-$string['dberror'] = 'Error in database operation';
-$string['invalidjson'] = 'Invalid JSON data received';
-$string['missingdata'] = 'Required data is missing';
 $string['feedbacksaved'] = 'AI feedback saved successfully';
-$string['invalidworkshopid'] = 'ID de workshop inválido';
-$string['errorprocessing'] = 'Error al procesar la solicitud';
 

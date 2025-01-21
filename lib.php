@@ -68,39 +68,38 @@ class workshop_peerreview_evaluation extends workshop_best_evaluation {
      */
     // Definir la función correctamente en lib.php
     function get_feedback_data() {
-        
         global $DB, $PAGE;
 
         $workshopid = $PAGE->cm->instance;
-    
 
-        // Consulta SQL para obtener los nombres de los revisores y de los revisados
-        $query = "
-            SELECT 
-                CONCAT(u.firstname, ' ', u.lastname) AS author,
-                CONCAT(u2.firstname, ' ', u2.lastname) AS reviewer,
-                wa.feedbackauthor,
-                wa.grade,
-                mws.workshopid,
-                mws.content,
-                wp.feedback_ai,
-                mws.authorid,
-                wa.id AS assessment_id
-            FROM
-                {workshop_submissions} mws
-            JOIN
-                {user} u ON mws.authorid = u.id
-            JOIN
-                {workshop_assessments} wa ON mws.id = wa.submissionid
-            JOIN
-                {user} u2 ON wa.reviewerid = u2.id
-            JOIN
-                {workshopeval_peerreview} wp ON wa.id = wp.assessmentid
-            WHERE
-                mws.workshopid = :workshopid
-        ";
+        // Primero, insertar registros faltantes en workshopeval_peerreview
+        $sql_missing = "INSERT INTO {workshopeval_peerreview} (assessmentid, feedback_ai, timecreated)
+                       SELECT DISTINCT wa.id, '', " . time() . "
+                       FROM {workshop_assessments} wa
+                       JOIN {workshop_submissions} ws ON wa.submissionid = ws.id
+                       LEFT JOIN {workshopeval_peerreview} wp ON wa.id = wp.assessmentid
+                       WHERE ws.workshopid = :workshopid AND wp.id IS NULL";
+        
+        $DB->execute($sql_missing, ['workshopid' => $this->workshop->id]);
 
-        // Ejecutar la consulta SQL
+        // Ahora sí, realizar la consulta con el JOIN
+        $query = "SELECT 
+                    CONCAT(u.firstname, ' ', u.lastname) AS author,
+                    CONCAT(u2.firstname, ' ', u2.lastname) AS reviewer,
+                    wa.feedbackauthor,
+                    wa.grade,
+                    mws.workshopid,
+                    mws.content,
+                    wp.feedback_ai,
+                    mws.authorid,
+                    wa.id AS assessment_id
+                FROM {workshop_submissions} mws
+                JOIN {user} u ON mws.authorid = u.id
+                JOIN {workshop_assessments} wa ON mws.id = wa.submissionid
+                JOIN {user} u2 ON wa.reviewerid = u2.id
+                JOIN {workshopeval_peerreview} wp ON wa.id = wp.assessmentid
+                WHERE mws.workshopid = :workshopid";
+
         return $DB->get_records_sql($query, ['workshopid' => $this->workshop->id]);
     }    
 
