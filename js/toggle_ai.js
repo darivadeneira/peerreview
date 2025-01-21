@@ -78,12 +78,29 @@ document.addEventListener("DOMContentLoaded", function () {
     // Manejar clic en el botón para mostrar/ocultar elementos
     toggleAiButton.addEventListener("click", async function () {
       var button = document.getElementById("toggle-ai-button");
-      var headerRow = table.tHead.rows[0];
-      var rows = table.tBodies[0].rows;
+      var tableContainer = document.getElementById("feedback-table");
 
       if (button.classList.contains("btn-primary")) {
         // Insertar registros automáticamente antes de mostrar la tabla
         try {
+          // Mostrar inputs y botón primero para feedback visual inmediato
+          apiKeyInput.style.display = "inline-block";
+          apiKeyInput.type = "password";
+          reviewButton.style.display = "inline-block";
+          
+          // Cambiar botón a "Desactivar IA"
+          button.textContent = "Desactivar revisión por IA";
+          button.classList.remove("btn-primary");
+          button.classList.add("btn-danger");
+
+          // Mostrar la tabla y la columna de IA
+          tableContainer.style.display = "block";
+          addAiColumnToTable();
+
+          // Guardar el estado en localStorage
+          localStorage.setItem("aiActivated", "true");
+
+          // Crear registros en segundo plano
           const response = await fetch('/mod/workshop/eval/peerreview/lib.php', {
             method: 'POST'
           });
@@ -92,26 +109,16 @@ document.addEventListener("DOMContentLoaded", function () {
             throw new Error('Error al crear registros iniciales');
           }
 
-          // Mostrar inputs y botón
-          apiKeyInput.style.display = "inline-block";
-          apiKeyInput.type = "password";
-          reviewButton.style.display = "inline-block";
-
-          // Añadir la columna "Revisión IA" en la tabla
-          addAiColumnToTable();
-
-          // Cambiar botón a "Desactivar IA"
-          button.textContent = "Desactivar revisión por IA";
-          button.classList.remove("btn-primary");
-          button.classList.add("btn-danger");
-
-          // Guardar el estado en localStorage
-          localStorage.setItem("aiActivated", "true");
-
-          // Recargar la página para mostrar los datos actualizados
-          location.reload();
         } catch (error) {
           console.error("Error:", error);
+          // En caso de error, revertir los cambios visuales
+          apiKeyInput.style.display = "none";
+          reviewButton.style.display = "none";
+          tableContainer.style.display = "none";
+          button.textContent = "Activar revisión por IA";
+          button.classList.remove("btn-danger");
+          button.classList.add("btn-primary");
+          localStorage.setItem("aiActivated", "false");
           alert("Error al inicializar la revisión por IA");
         }
       } else {
