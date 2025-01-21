@@ -29,4 +29,6 @@ $string['dberror'] = 'Error in database operation';
 $string['invalidjson'] = 'Invalid JSON data received';
 $string['missingdata'] = 'Required data is missing';
 $string['feedbacksaved'] = 'AI feedback saved successfully';
+$string['invalidworkshopid'] = 'ID de workshop inválido';
+$string['errorprocessing'] = 'Error al procesar la solicitud';
 

@@ -123,20 +123,35 @@ document.addEventListener("DOMContentLoaded", function () {
     // Función para crear registros iniciales
     async function createInitialRecords() {
       try {
+        // Obtener el workshopid del atributo data del elemento table
+        const tableElement = document.getElementById('feedback-table');
+        const workshopid = tableElement ? tableElement.getAttribute('data-workshopid') : null;
+
+        if (!workshopid) {
+          throw new Error('No se pudo encontrar el ID del workshop');
+        }
+
         const response = await fetch('/lib/ajax/service.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            index: 0,
             methodname: 'workshopeval_peerreview_create_initial_records',
             args: {
-              workshopid: document.getElementById('feedback-table').dataset.workshopid
+              workshopid: parseInt(workshopid)
             }
           })
         });
 
-        return await response.json();
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        return data;
       } catch (error) {
         console.error("Error:", error);
         throw error;

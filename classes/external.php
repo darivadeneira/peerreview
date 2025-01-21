@@ -98,56 +98,63 @@ class external extends \external_api {
     public static function create_initial_records($workshopid) {
         global $DB;
 
-        // Validar parámetros
-        $params = self::validate_parameters(self::create_initial_records_parameters(),
-            array('workshopid' => $workshopid));
-
         try {
+            // Verificar que el workshopid es válido
+            if (!$workshopid || !is_numeric($workshopid)) {
+                throw new \moodle_exception('invalidworkshopid', 'workshopeval_peerreview');
+            }
+
             // Iniciar transacción
             $transaction = $DB->start_delegated_transaction();
 
-            // Obtener todas las evaluaciones existentes que no tienen registro en workshopeval_peerreview
-            $sql = "SELECT wa.id as assessmentid 
-                   FROM {workshop_assessments} wa 
-                   LEFT JOIN {workshopeval_peerreview} wp ON wa.id = wp.assessmentid 
-                   JOIN {workshop_submissions} ws ON wa.submissionid = ws.id 
-                   WHERE ws.workshopid = :workshopid AND wp.id IS NULL";
-            
-            $assessments = $DB->get_records_sql($sql, ['workshopid' => $params['workshopid']]);
+            // Verificar si el workshop existe
+            if (!$DB->record_exists('workshop', array('id' => $workshopid))) {
+                throw new \moodle_exception('invalidworkshopid', 'workshopeval_peerreview');
+            }
 
+            // Obtener todas las evaluaciones existentes que no tienen registro en workshopeval_peerreview
+            $sql = "SELECT DISTINCT wa.id as assessmentid 
+                   FROM {workshop_assessments} wa 
+                   JOIN {workshop_submissions} ws ON wa.submissionid = ws.id 
+                   LEFT JOIN {workshopeval_peerreview} wp ON wa.id = wp.assessmentid 
+                   WHERE ws.workshopid = :workshopid 
+                   AND wp.id IS NULL";
+            
+            $assessments = $DB->get_records_sql($sql, ['workshopid' => $workshopid]);
+
+            $createdCount = 0;
             foreach ($assessments as $assessment) {
                 $record = new \stdClass();
                 $record->assessmentid = $assessment->assessmentid;
-                $record->feedback_ai = ''; // Feedback inicial vacío
+                $record->feedback_ai = '';
                 $record->timecreated = time();
 
-                if (!$DB->insert_record('workshopeval_peerreview', $record)) {
-                    throw new \moodle_exception('dberror', 'workshopeval_peerreview');
+                if ($DB->insert_record('workshopeval_peerreview', $record)) {
+                    $createdCount++;
                 }
             }
 
-            // Confirmar transacción
             $transaction->allow_commit();
 
-            return array(
+            return [
                 'success' => true,
-                'message' => get_string('recordscreated', 'workshopeval_peerreview')
-            );
+                'message' => "Se crearon $createdCount registros correctamente",
+                'count' => $createdCount
+            ];
 
         } catch (\Exception $e) {
             if (isset($transaction)) {
                 $transaction->rollback($e);
             }
-            throw new \moodle_exception('dberror', 'workshopeval_peerreview', '', $e->getMessage());
+            throw new \moodle_exception('errorprocessing', 'workshopeval_peerreview', '', $e->getMessage());
         }
     }
 
     public static function create_initial_records_returns() {
-        return new \external_single_structure(
-            array(
-                'success' => new \external_value(PARAM_BOOL, 'Whether the operation was successful'),
-                'message' => new \external_value(PARAM_TEXT, 'Status message')
-            )
-        );
+        return new \external_single_structure([
+            'success' => new \external_value(PARAM_BOOL, 'Whether the operation was successful'),
+            'message' => new \external_value(PARAM_TEXT, 'Status message'),
+            'count' => new \external_value(PARAM_INT, 'Number of records created')
+        ]);
     }
 }
