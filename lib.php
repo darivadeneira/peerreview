@@ -74,7 +74,7 @@ class workshop_peerreview_evaluation extends workshop_best_evaluation {
 
         // Primero, insertar registros faltantes en workshopeval_peerreview
         $sql_missing = "INSERT INTO {workshopeval_peerreview} (assessmentid, feedback_ai, timecreated)
-                       SELECT DISTINCT wa.id, '', " . time() . "
+                       SELECT DISTINCT wa.id, 'Pendiente', " . time() . "
                        FROM {workshop_assessments} wa
                        JOIN {workshop_submissions} ws ON wa.submissionid = ws.id
                        LEFT JOIN {workshopeval_peerreview} wp ON wa.id = wp.assessmentid

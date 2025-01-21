@@ -126,7 +126,7 @@ class external extends \external_api {
             foreach ($assessments as $assessment) {
                 $record = new \stdClass();
                 $record->assessmentid = $assessment->assessmentid;
-                $record->feedback_ai = '';
+                $record->feedback_ai = 'Pendiente';  // Cambiado de string vacío a 'Pendiente'
                 $record->timecreated = time();
 
                 if ($DB->insert_record('workshopeval_peerreview', $record)) {
