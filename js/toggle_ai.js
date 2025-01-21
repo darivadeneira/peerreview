@@ -43,6 +43,12 @@ document.addEventListener("DOMContentLoaded", function () {
     container.appendChild(apiKeyInput);
     container.appendChild(reviewButton);
 
+    // Ocultar tabla inicialmente
+    var tableContainer = document.getElementById("feedback-table-container");
+    if (tableContainer) {
+      tableContainer.style.display = "none";
+    }
+
     // Comprobar si la IA está activada al cargar la página
     if (localStorage.getItem("aiActivated") === "true") {
       toggleAiButton.textContent = "Desactivar revisión por IA";
@@ -50,8 +56,9 @@ document.addEventListener("DOMContentLoaded", function () {
       toggleAiButton.classList.add("btn-danger");
       apiKeyInput.style.display = "inline-block";
       reviewButton.style.display = "inline-block";
-
-      // Mostrar la columna de "Revisión IA" en la tabla
+      if (tableContainer) {
+        tableContainer.style.display = "block";
+      }
       addAiColumnToTable();
     } else {
       toggleAiButton.textContent = "Activar revisión por IA";
@@ -59,8 +66,9 @@ document.addEventListener("DOMContentLoaded", function () {
       toggleAiButton.classList.add("btn-primary");
       apiKeyInput.style.display = "none";
       reviewButton.style.display = "none";
-
-      // Eliminar la columna de "Revisión IA" en la tabla si no está activada
+      if (tableContainer) {
+        tableContainer.style.display = "none";
+      }
       removeAiColumnFromTable();
     }
 
@@ -68,33 +76,51 @@ document.addEventListener("DOMContentLoaded", function () {
     apiKeyInput.value = localStorage.getItem("apiKey") || "";
 
     // Manejar clic en el botón para mostrar/ocultar elementos
-    toggleAiButton.addEventListener("click", function () {
+    toggleAiButton.addEventListener("click", async function () {
       var button = document.getElementById("toggle-ai-button");
+      var headerRow = table.tHead.rows[0];
+      var rows = table.tBodies[0].rows;
 
       if (button.classList.contains("btn-primary")) {
-        // Mostrar inputs y botón
-        apiKeyInput.style.display = "inline-block";
-        apiKeyInput.type = "password";
-        reviewButton.style.display = "inline-block";
+        // Insertar registros automáticamente antes de mostrar la tabla
+        try {
+          const response = await fetch('/mod/workshop/eval/peerreview/lib.php', {
+            method: 'POST'
+          });
+          
+          if (!response.ok) {
+            throw new Error('Error al crear registros iniciales');
+          }
 
-        // Cambiar botón a "Desactivar IA"
-        button.textContent = "Desactivar revisión por IA";
-        button.classList.remove("btn-primary");
-        button.classList.add("btn-danger");
+          // Mostrar inputs y botón
+          apiKeyInput.style.display = "inline-block";
+          apiKeyInput.type = "password";
+          reviewButton.style.display = "inline-block";
 
-        // Guardar el estado en localStorage
-        localStorage.setItem("aiActivated", "true");
+          // Añadir la columna "Revisión IA" en la tabla
+          addAiColumnToTable();
 
-        // Añadir la columna "Revisión IA" en la tabla
-        addAiColumnToTable();
-        
-        // Recargar la página para obtener los nuevos registros
-        location.reload();
+          // Cambiar botón a "Desactivar IA"
+          button.textContent = "Desactivar revisión por IA";
+          button.classList.remove("btn-primary");
+          button.classList.add("btn-danger");
+
+          // Guardar el estado en localStorage
+          localStorage.setItem("aiActivated", "true");
+
+          // Recargar la página para mostrar los datos actualizados
+          location.reload();
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Error al inicializar la revisión por IA");
+        }
       } else {
-        // Ocultar inputs y botón
+        // Ocultar inputs, botón y tabla
         apiKeyInput.style.display = "none";
         reviewButton.style.display = "none";
-        tableContainer.style.display = "none";
+        if (tableContainer) {
+          tableContainer.style.display = "none";
+        }
 
         // Eliminar la columna "Revisión IA" de la tabla
         removeAiColumnFromTable();
