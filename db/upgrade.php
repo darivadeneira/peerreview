@@ -53,5 +53,46 @@ function xmldb_workshopeval_peerreview_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2025190101, 'workshopeval', 'peerreview');
     }
 
+    if ($oldversion < 2025190104) {
+        // Registrar servicios web
+        $service = new stdClass();
+        $service->name = 'Peer Review Evaluation Service';
+        $service->shortname = 'workshopeval_peerreview';
+        $service->enabled = 1;
+        $service->restrictedusers = 0;
+        $service->downloadfiles = 0;
+        $service->uploadfiles = 0;
+
+        if (!$DB->record_exists('external_services', array('shortname' => 'workshopeval_peerreview'))) {
+            $service->id = $DB->insert_record('external_services', $service);
+        }
+
+        // Registrar funciones
+        $functions = array(
+            array(
+                'name' => 'workshopeval_peerreview_save_feedback',
+                'classname' => 'workshopeval_peerreview\\external',
+                'methodname' => 'save_feedback',
+                'classpath' => 'mod/workshop/eval/peerreview/classes/external.php',
+                'description' => 'Save AI feedback evaluation'
+            ),
+            array(
+                'name' => 'workshopeval_peerreview_create_initial_records',
+                'classname' => 'workshopeval_peerreview\\external',
+                'methodname' => 'create_initial_records',
+                'classpath' => 'mod/workshop/eval/peerreview/classes/external.php',
+                'description' => 'Create initial records in workshopeval_peerreview table'
+            )
+        );
+
+        foreach ($functions as $function) {
+            if (!$DB->record_exists('external_functions', array('name' => $function['name']))) {
+                $DB->insert_record('external_functions', $function);
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2025190104, 'workshopeval', 'peerreview');
+    }
+
     return true;
 }
