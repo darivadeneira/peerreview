@@ -78,10 +78,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Manejar clic en el botón para mostrar/ocultar elementos
     toggleAiButton.addEventListener("click", async function () {
       var button = document.getElementById("toggle-ai-button");
-      var tableContainer = document.getElementById("feedback-table");
-
+      
       if (button.classList.contains("btn-primary")) {
-        // Insertar registros automáticamente antes de mostrar la tabla
         try {
           // Mostrar inputs y botón primero para feedback visual inmediato
           apiKeyInput.style.display = "inline-block";
@@ -93,8 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
           button.classList.remove("btn-primary");
           button.classList.add("btn-danger");
 
-          // Mostrar la tabla y la columna de IA
-          tableContainer.style.display = "block";
+          // Mostrar la columna de IA
           addAiColumnToTable();
 
           // Guardar el estado en localStorage
@@ -114,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
           // En caso de error, revertir los cambios visuales
           apiKeyInput.style.display = "none";
           reviewButton.style.display = "none";
-          tableContainer.style.display = "none";
+          removeAiColumnFromTable();
           button.textContent = "Activar revisión por IA";
           button.classList.remove("btn-danger");
           button.classList.add("btn-primary");
@@ -122,14 +119,9 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error al inicializar la revisión por IA");
         }
       } else {
-        // Ocultar inputs, botón y tabla
+        // Solo ocultar inputs, botón y columna de IA
         apiKeyInput.style.display = "none";
         reviewButton.style.display = "none";
-        if (tableContainer) {
-          tableContainer.style.display = "none";
-        }
-
-        // Eliminar la columna "Revisión IA" de la tabla
         removeAiColumnFromTable();
 
         // Cambiar botón a "Activar IA"
@@ -323,9 +315,9 @@ FEEDBACK SUPERVISOR:${grade.feedback_author}`;
 
   function addAiColumnToTable() {
     for (var i = 0; i < ia_data.length; i++) {
-      ia_data[i].style.display = "inline-block";
+      ia_data[i].style.display = "table-cell"; // Cambiado de inline-block a table-cell
     }
-    ia_header.style.display = "inline-block";
+    ia_header.style.display = "table-cell"; // Cambiado de inline-block a table-cell
   }
 
   function removeAiColumnFromTable() {

@@ -59,7 +59,8 @@ class settings_form extends \workshop_evaluation_settings_form {
         $workshopid = $this->_customdata['workshop']->id; // Obtener el workshopid
 
         // Create an HTML table to display the results
-        $table_html = '<table id="feedback-table" class="table table-striped" data-workshopid="' . $workshopid . '">
+        $table_html = '<div class="table-responsive">'; // Añadir contenedor responsive
+        $table_html .= '<table id="feedback-table" class="table table-striped table-bordered" data-workshopid="' . $workshopid . '">
                          <thead>
                              <tr>
                                 <th style="display: none;">Assesment ID</th>
