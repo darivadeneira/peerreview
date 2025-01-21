@@ -68,31 +68,44 @@ document.addEventListener("DOMContentLoaded", function () {
     apiKeyInput.value = localStorage.getItem("apiKey") || "";
 
     // Manejar clic en el botón para mostrar/ocultar elementos
-    toggleAiButton.addEventListener("click", function () {
+    toggleAiButton.addEventListener("click", async function () {
       var button = document.getElementById("toggle-ai-button");
-      var headerRow = table.tHead.rows[0];
-      var rows = table.tBodies[0].rows;
+      var tableContainer = document.getElementById("feedback-table-container");
 
       if (button.classList.contains("btn-primary")) {
-        // Mostrar inputs y botón
-        apiKeyInput.style.display = "inline-block";
-        apiKeyInput.type = "password";
-        reviewButton.style.display = "inline-block";
+        // Crear registros en la tabla workshopeval_peerreview antes de mostrar la tabla
+        try {
+          const response = await createInitialRecords();
+          if (response.success) {
+            // Mostrar inputs y botón
+            apiKeyInput.style.display = "inline-block";
+            apiKeyInput.type = "password";
+            reviewButton.style.display = "inline-block";
+            tableContainer.style.display = "block";
 
-        // Añadir la columna "Revisión IA" en la tabla
-        addAiColumnToTable();
+            // Actualizar la tabla con los nuevos datos
+            location.reload(); // Recarga la página para mostrar los datos actualizados
 
-        // Cambiar botón a "Desactivar IA"
-        button.textContent = "Desactivar revisión por IA";
-        button.classList.remove("btn-primary");
-        button.classList.add("btn-danger");
+            // Cambiar botón a "Desactivar IA"
+            button.textContent = "Desactivar revisión por IA";
+            button.classList.remove("btn-primary");
+            button.classList.add("btn-danger");
 
-        // Guardar el estado en localStorage
-        localStorage.setItem("aiActivated", "true");
+            // Guardar el estado en localStorage
+            localStorage.setItem("aiActivated", "true");
+
+            // Añadir la columna "Revisión IA" en la tabla
+            addAiColumnToTable();
+          }
+        } catch (error) {
+          console.error("Error al crear registros iniciales:", error);
+          alert("Error al inicializar la revisión por IA");
+        }
       } else {
         // Ocultar inputs y botón
         apiKeyInput.style.display = "none";
         reviewButton.style.display = "none";
+        tableContainer.style.display = "none";
 
         // Eliminar la columna "Revisión IA" de la tabla
         removeAiColumnFromTable();
@@ -106,6 +119,29 @@ document.addEventListener("DOMContentLoaded", function () {
         localStorage.setItem("aiActivated", "false");
       }
     });
+
+    // Función para crear registros iniciales
+    async function createInitialRecords() {
+      try {
+        const response = await fetch('/lib/ajax/service.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            methodname: 'workshopeval_peerreview_create_initial_records',
+            args: {
+              workshopid: document.getElementById('feedback-table').dataset.workshopid
+            }
+          })
+        });
+
+        return await response.json();
+      } catch (error) {
+        console.error("Error:", error);
+        throw error;
+      }
+    }
 
     var instructionKey = Object.keys(feedbackData.instructions)[0];
     var instructionsContent = feedbackData.instructions[instructionKey].instructauthors;

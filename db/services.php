@@ -22,5 +22,15 @@ $functions = array(
         'capabilities'  => 'mod/workshop:view',
         'ajax'          => true,
         'loginrequired' => true
+    ),
+    'workshopeval_peerreview_create_initial_records' => array(
+        'classname'     => 'workshopeval_peerreview\external',
+        'methodname'    => 'create_initial_records',
+        'classpath'     => 'mod/workshop/eval/peerreview/classes/external.php',
+        'description'   => 'Create initial records in workshopeval_peerreview table',
+        'type'          => 'write',
+        'capabilities'  => 'mod/workshop:view',
+        'ajax'          => true,
+        'loginrequired' => true
     )
 );
